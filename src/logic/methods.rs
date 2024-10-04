@@ -4,8 +4,8 @@ use super::store::{STATE, UserData, AccessToken, save_state, load_state};
 use super::utils::{decrypt, encrypt, generate_key_pair, generate_otp, generate_seed};
 
 #[init]
-pub fn init() {
-    let (private_key, public_key) = generate_key_pair();
+pub async fn init() {
+    let (private_key, public_key) = generate_key_pair().await;
     STATE.with(|state| {
         let mut state = state.borrow_mut();
         state.set_keys(private_key, public_key);
@@ -26,7 +26,7 @@ pub fn post_upgrade() {
 pub async fn register(user_key: String, user_pub_key: String) -> String {
     let seed = generate_seed().await.unwrap();
     let otp = generate_otp().await.unwrap();
-    let encrypted_token = encrypt(&user_pub_key, &otp);
+    let encrypted_token = encrypt(&user_pub_key, &otp).await;
 
     let access_token = AccessToken {
         unencrypted_token: otp.clone(),
@@ -52,7 +52,7 @@ pub async fn generate_access_token(user_key: String, user_pub_key: String) -> St
     // Generate OTP outside of the closure
     let otp = generate_otp().await.unwrap();
     // Encrypt the OTP
-    let encrypted_token = encrypt(&user_pub_key, &otp);
+    let encrypted_token = encrypt(&user_pub_key, &otp).await;
 
     // Update the state
     STATE.with(|state| {
